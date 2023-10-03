@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <title>Chat con Socket.IO</title>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/emojione@3.0.0/lib/js/emojione.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        .message-container {
+            display: flex;
+            justify-content: flex-start;
+            margin: 10px;
+        }
+
+        .message-container.right {
+            justify-content: flex-end;
+        }
+
+        .chat-card {
+            background-color: #DCF8C6;
+            padding: 8px;
+            border-radius: 10px;
+            box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.1);
+            max-width: 70%;
+            word-wrap: break-word;
+        }
+
+        .chat-card.right {
+            background-color: #E2E2E2;
+        }
+
+        .chat-input {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+        }
+
+        .card {
+            max-width: 40%;
+            border: none;
+            border-radius: 15px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .profile-image {
+            max-width: 40px;
+            max-height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .message-time {
+            font-size: 12px;
+            color: #888;
+            margin-top: 4px;
+        }
+    </style>
+    <script>
+        // Conexión de Socket.IO al servidor
+        var socket = io();
+
+        // Variables para almacenar el nombre y la imagen de perfil
+        var nombreUsuario1 = '';
+        var imagenPerfil1 = '';
+        var nombreUsuario2 = '';
+        var imagenPerfil2 = '';
+
+        // Función para enviar mensajes del chat 1
+        function enviarMensaje1() {
+            var mensajeInput = document.getElementById('mensaje1');
+            var mensaje = mensajeInput.value;
+            
+            // Convertir códigos de emojis en imágenes de emojis
+            mensaje = emojione.shortnameToImage(mensaje);
+
+            socket.emit('chat_message_1', { nombre: nombreUsuario1, mensaje, imagenPerfil: imagenPerfil1 });
+            
+            // Limpiar el campo de mensaje después de enviar
+            mensajeInput.value = '';
+            return false;
+        }
+
+
+        // Función para recibir mensajes del chat 1
+        socket.on('chat_message_1', function(data){
+            agregarMensaje(data.nombre, data.mensaje, data.imagenPerfil, 'left');
+        });
+
+        // Función para enviar mensajes del chat 2
+        function enviarMensaje2() {
+            var mensajeInput = document.getElementById('mensaje2');
+            var mensaje = mensajeInput.value;
+            
+            // Convertir códigos de emojis en imágenes de emojis
+            mensaje = emojione.shortnameToImage(mensaje);
+
+            socket.emit('chat_message_2', { nombre: nombreUsuario2, mensaje, imagenPerfil: imagenPerfil2 });
+            
+            // Limpiar el campo de mensaje después de enviar
+            mensajeInput.value = '';
+            return false;
+        }
+
+
+        // Función para recibir mensajes del chat 2
+        socket.on('chat_message_2', function(data){
+            agregarMensaje(data.nombre, data.mensaje, data.imagenPerfil, 'right');
+        });
+
+        // Función para agregar un mensaje a la lista
+        function agregarMensaje(nombre, mensaje, imagenPerfil, alignment) {
+            var listaMensajes = document.getElementById('lista-mensajes');
+            var mensajeContainer = document.createElement('div');
+            mensajeContainer.className = `message-container ${alignment}`;
+            var emojiElement = document.createElement('div');
+            emojiElement.className = 'emoji';
+            
+            var mensajeElement = document.createElement('div');
+            mensajeElement.className = `chat-card ${alignment}`;
+            
+            // Crear elemento para la imagen de perfil
+            var imagenElement = document.createElement('img');
+            imagenElement.className = 'profile-image';
+            imagenElement.src = imagenPerfil;
+            imagenElement.alt = 'Imagen de perfil';
+
+            // Agregar nombre y mensaje
+            mensajeElement.innerHTML = `<strong>${nombre}:</strong> ${mensaje}`;
+            
+            // Agregar la hora actual al mensaje
+            var horaElement = document.createElement('div');
+            horaElement.className = 'message-time';
+            var horaActual = new Date().toLocaleTimeString();
+            horaElement.textContent = horaActual;
+            
+            mensajeContainer.appendChild(imagenElement);
+            mensajeContainer.appendChild(mensajeElement);
+            mensajeContainer.appendChild(horaElement);
+            listaMensajes.appendChild(mensajeContainer);
+        }
+
+        // Función para configurar el nombre y la imagen de perfil del usuario 1
+        function configurarUsuario1() {
+            nombreUsuario1 = document.getElementById('nombre1').value;
+            imagenPerfil1 = document.getElementById('imagen1').value;
+            document.getElementById('nombre1').disabled = true;
+            document.getElementById('imagen1').disabled = true;
+        }
+
+        // Función para configurar el nombre y la imagen de perfil del usuario 2
+        function configurarUsuario2() {
+            nombreUsuario2 = document.getElementById('nombre2').value;
+            imagenPerfil2 = document.getElementById('imagen2').value;
+            document.getElementById('nombre2').disabled = true;
+            document.getElementById('imagen2').disabled = true;
+        }
+    </script>
+</head>
+<body>
+    <div class="container py-4">
+        <h1 class="text-center mb-4">Chat con Socket.IO</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h2>Chat 1</h2>
+                <form class="chat-input" onsubmit="return enviarMensaje1()">
+                    <input id="nombre1" class="form-control" placeholder="Tu Nombre" autocomplete="off" required />
+                    <input id="mensaje1" class="form-control" placeholder="Mensaje" autocomplete="off" required />
+                    <input id="imagen1" class="form-control" type="url" placeholder="URL de la imagen de perfil" autocomplete="off" required />
+                    <button class="btn btn-primary">Enviar</button>
+                    <button type="button" class="btn btn-secondary" onclick="configurarUsuario1()">Configurar Usuario 1</button>
+                </form>
+            </div>
+
+            <div class="col-md-6">
+                <h2>Chat 2</h2>
+                <form class="chat-input" onsubmit="return enviarMensaje2()">
+                    <input id="nombre2" class="form-control" placeholder="Tu Nombre" autocomplete="off" required />
+                    <input id="mensaje2" class="form-control" placeholder="Mensaje" autocomplete="off" required />
+                    <input id="imagen2" class="form-control" type="url" placeholder="URL de la imagen de perfil" autocomplete="off" required />
+                    <button class="btn btn-primary">Enviar</button>
+                    <button type="button" class="btn btn-secondary" onclick="configurarUsuario2()">Configurar Usuario 2</button>
+                </form>
+            </div>
+        </div>
+
+        <div class="card mt-4">
+            <div class="card-body">
+                <h2 class="card-title">Mensajes</h2>
+                <div id="lista-mensajes"></div>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
